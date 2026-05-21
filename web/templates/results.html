@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Results — {{ analysis.id }}{% endblock %}
+{% block page_title %}Analysis Results{% endblock %}
+{% block page_subtitle %}{{ analysis.filename }} · {{ analysis.language }} · {{ analysis.id }}{% endblock %}
+
+{% block content %}
+<!-- Summary Bar -->
+<div class="results-summary">
+    <div class="results-score-ring">
+        <svg viewBox="0 0 120 120" class="score-ring-svg">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#30363d" stroke-width="8"/>
+            <circle cx="60" cy="60" r="52" fill="none" 
+                    stroke="{% if analysis.score >= 70 %}#3fb950{% elif analysis.score >= 40 %}#d29922{% else %}#f85149{% endif %}"
+                    stroke-width="8" stroke-linecap="round"
+                    stroke-dasharray="{{ analysis.score * 3.267 }} 326.7"
+                    transform="rotate(-90 60 60)"/>
+            <text x="60" y="65" text-anchor="middle" fill="#e6edf3" font-size="28" font-weight="700">{{ analysis.score }}</text>
+            <text x="60" y="82" text-anchor="middle" fill="#8b949e" font-size="11">/ 100</text>
+        </svg>
+    </div>
+    <div class="results-metrics">
+        <div class="results-metric">
+            <span class="results-metric-value">{{ analysis.findings|length }}</span>
+            <span class="results-metric-label">Findings</span>
+        </div>
+        <div class="results-metric">
+            <span class="results-metric-value">{{ "{:,}".format(analysis.tokens_used) }}</span>
+            <span class="results-metric-label">Tokens</span>
+        </div>
+        <div class="results-metric">
+            <span class="results-metric-value">{{ analysis.duration_ms }}ms</span>
+            <span class="results-metric-label">Duration</span>
+        </div>
+        <div class="results-metric">
+            <span class="results-metric-value">{{ analysis.agent_ids|length }}</span>
+            <span class="results-metric-label">Agents</span>
+        </div>
+    </div>
+</div>
+
+<!-- Severity Breakdown -->
+<div class="severity-bars">
+    {% for sev in ['critical', 'high', 'medium', 'low', 'info'] %}
+    <div class="severity-bar-item">
+        <span class="severity-label">{{ sev|capitalize }}</span>
+        <div class="severity-bar">
+            <div class="severity-bar-fill severity-{{ sev }}" 
+                 style="width: {{ (grouped[sev]|length / (analysis.findings|length or 1) * 100)|int }}%"></div>
+        </div>
+        <span class="severity-count">{{ grouped[sev]|length }}</span>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Code Block -->
+<div class="card">
+    <div class="card-header">
+        <h3>Analyzed Code</h3>
+        <span class="badge badge-lang">{{ analysis.language }}</span>
+    </div>
+    <div class="card-body">
+        <pre class="code-block"><code>{{ analysis.code }}</code></pre>
+    </div>
+</div>
+
+<!-- Findings by Severity -->
+{% for sev in ['critical', 'high', 'medium', 'low', 'info'] %}
+{% if grouped[sev] %}
+<div class="card findings-card">
+    <div class="card-header">
+        <h3>
+            <span class="severity-badge severity-{{ sev }}">{{ sev|upper }}</span>
+            {{ sev|capitalize }} Findings
+        </h3>
+        <span class="badge">{{ grouped[sev]|length }} issue{{ 's' if grouped[sev]|length != 1 }}</span>
+    </div>
+    <div class="card-body">
+        {% for finding in grouped[sev] %}
+        <div class="finding-item">
+            <div class="finding-agent">
+                <span class="finding-agent-icon">
+                    {% for agent in agents %}{% if agent.name == finding.agent %}{{ agent.icon }}{% endif %}{% endfor %}
+                </span>
+                {{ finding.agent }}
+            </div>
+            <div class="finding-message">{{ finding.message }}</div>
+            {% if finding.line %}
+            <div class="finding-line">Line {{ finding.line }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- Agent Breakdown -->
+<div class="card">
+    <div class="card-header">
+        <h3>Agent Breakdown</h3>
+    </div>
+    <div class="card-body">
+        <div class="agent-breakdown-grid">
+            {% for agent_id in analysis.agent_ids %}
+            {% for agent in agents %}{% if agent.id == agent_id %}
+            <div class="agent-breakdown-item">
+                <span class="agent-icon-lg">{{ agent.icon }}</span>
+                <div>
+                    <strong>{{ agent.name }}</strong>
+                    <div class="text-muted">{{ agent.category }}</div>
+                </div>
+                <div class="text-right">
+                    <div class="badge">{{ analysis.findings|selectattr("agent", "equalto", agent.name)|list|length }} findings</div>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="text-center" style="margin-top:2rem;">
+    <a href="/analyze" class="btn btn-primary">New Analysis</a>
+    <a href="/" class="btn" style="margin-left:0.5rem;">Back to Dashboard</a>
+</div>
+{% endblock %}

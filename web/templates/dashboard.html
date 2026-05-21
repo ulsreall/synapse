@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}System overview & recent activity{% endblock %}
+
+{% block content %}
+<!-- Metric Cards -->
+<div class="metrics-row">
+    <div class="metric-card">
+        <div class="metric-icon">🤖</div>
+        <div class="metric-body">
+            <div class="metric-value">{{ active_agents }}<span class="metric-unit"> / {{ agents|length }}</span></div>
+            <div class="metric-label">Active Agents</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">📄</div>
+        <div class="metric-body">
+            <div class="metric-value">{{ total_analyses }}</div>
+            <div class="metric-label">Total Analyses</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">🪙</div>
+        <div class="metric-body">
+            <div class="metric-value">{{ "{:,.0f}".format(total_tokens) }}</div>
+            <div class="metric-label">Tokens Consumed</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">💰</div>
+        <div class="metric-body">
+            <div class="metric-value">${{ "%.2f"|format(total_tokens * 0.000015) }}</div>
+            <div class="metric-label">Estimated Cost</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3>Token Usage Trend</h3>
+            <span class="badge">Last 14 days</span>
+        </div>
+        <div class="card-body chart-container">
+            <canvas id="tokenTrendChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3>Agent Workload</h3>
+            <span class="badge">By tokens</span>
+        </div>
+        <div class="card-body chart-container">
+            <canvas id="agentWorkloadChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Agents Grid -->
+<div class="card">
+    <div class="card-header">
+        <h3>Agent Status</h3>
+        <a href="/agents" class="btn btn-sm">View All →</a>
+    </div>
+    <div class="card-body">
+        <div class="agent-grid">
+            {% for agent in agents %}
+            <div class="agent-card">
+                <div class="agent-card-header">
+                    <span class="agent-icon">{{ agent.icon }}</span>
+                    <span class="status-dot {{ agent.status }}"></span>
+                </div>
+                <div class="agent-card-name">{{ agent.name }}</div>
+                <div class="agent-card-stats">
+                    <span>{{ "{:,.0f}".format(agent.tokens_used) }} tokens</span>
+                    <span>{{ agent.success_rate }}% success</span>
+                </div>
+                <div class="agent-card-bar">
+                    <div class="bar-fill" style="width: {{ agent.success_rate }}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Analyses -->
+<div class="card">
+    <div class="card-header">
+        <h3>Recent Analyses</h3>
+        <a href="/analyze" class="btn btn-sm btn-primary">New Analysis →</a>
+    </div>
+    <div class="card-body">
+        {% if recent_analyses %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>File</th>
+                        <th>Language</th>
+                        <th>Score</th>
+                        <th>Findings</th>
+                        <th>Tokens</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in recent_analyses %}
+                    <tr onclick="window.location='/results/{{ a.id }}'" class="clickable">
+                        <td><code>{{ a.id }}</code></td>
+                        <td>{{ a.filename }}</td>
+                        <td><span class="badge badge-lang">{{ a.language }}</span></td>
+                        <td>
+                            <span class="score-badge {{ 'score-critical' if a.score < 40 else ('score-warning' if a.score < 70 else 'score-good') }}">
+                                {{ a.score }}
+                            </span>
+                        </td>
+                        <td>{{ a.findings|length }}</td>
+                        <td>{{ "{:,}".format(a.tokens_used) }}</td>
+                        <td>{{ a.created[:16] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No analyses yet. <a href="/analyze">Run your first analysis →</a></p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof renderTokenTrendChart === 'function') {
+        fetch('/api/stats').then(r => r.json()).then(data => {
+            renderTokenTrendChart('tokenTrendChart', data.daily_stats);
+            renderAgentWorkloadChart('agentWorkloadChart', {{ agents|tojson }});
+        });
+    }
+});
+</script>
+{% endblock %}

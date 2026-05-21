@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SYNAPSE{% endblock %} — Code Review Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <button class="sidebar-toggle" onclick="document.body.classList.toggle('sidebar-open')" aria-label="Toggle menu">☰</button>
+    <div class="sidebar-overlay" onclick="document.body.classList.remove('sidebar-open')"></div>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-icon">◆</span>
+            <span class="brand-text">SYNAPSE</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            <a href="/analyze" class="nav-item {% if request.endpoint == 'analyze' %}active{% endif %}">
+                <span class="nav-icon">🔬</span>
+                <span class="nav-label">Analyze</span>
+            </a>
+            <a href="/agents" class="nav-item {% if request.endpoint == 'agents_page' %}active{% endif %}">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-label">Agents</span>
+            </a>
+            <a href="/stats" class="nav-item {% if request.endpoint == 'stats_page' %}active{% endif %}">
+                <span class="nav-icon">📈</span>
+                <span class="nav-label">Statistics</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-version">v2.4.0</div>
+            <div class="sidebar-status">
+                <span class="status-dot active"></span>
+                System Online
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                <span class="page-subtitle">{% block page_subtitle %}Overview{% endblock %}</span>
+            </div>
+            <div class="top-bar-right">
+                <span class="top-bar-badge">
+                    <span class="status-dot active pulse"></span>
+                    <span id="agent-count">{{ active_agents|default(0) }} agents active</span>
+                </span>
+            </div>
+        </header>
+
+        <div class="page-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

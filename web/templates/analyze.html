@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Analyze Code{% endblock %}
+{% block page_title %}Analyze Code{% endblock %}
+{% block page_subtitle %}Submit code for multi-agent review{% endblock %}
+
+{% block content %}
+<form method="POST" action="/analyze" id="analyzeForm">
+    <div class="grid-2" style="grid-template-columns: 1fr 320px;">
+        <!-- Code Editor -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Code Editor</h3>
+                <div class="editor-controls">
+                    <select name="language" id="languageSelect" class="select" onchange="updateEditorMode()">
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="typescript">TypeScript</option>
+                        <option value="rust">Rust</option>
+                        <option value="go">Go</option>
+                        <option value="java">Java</option>
+                        <option value="c">C</option>
+                        <option value="cpp">C++</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="php">PHP</option>
+                    </select>
+                    <input type="text" name="filename" class="input" placeholder="filename.py" id="filenameInput" style="width:180px;">
+                </div>
+            </div>
+            <div class="card-body editor-body">
+                <div class="editor-gutter" id="editorGutter">1</div>
+                <textarea name="code" id="codeEditor" class="code-editor" 
+                    placeholder="# Paste your code here..."
+                    spellcheck="false"
+                    oninput="updateLineNumbers()"></textarea>
+            </div>
+            <div class="card-footer">
+                <div class="editor-stats">
+                    <span id="lineCount">0 lines</span>
+                    <span id="charCount">0 chars</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Selection Sidebar -->
+        <div>
+            <div class="card" style="position:sticky;top:100px;">
+                <div class="card-header">
+                    <h3>Select Agents</h3>
+                    <label class="checkbox-label" style="font-size:0.75rem;">
+                        <input type="checkbox" id="selectAll" onchange="toggleAllAgents(this)"> Select all
+                    </label>
+                </div>
+                <div class="card-body">
+                    <div class="agent-select-list">
+                        {% for agent in agents %}
+                        <label class="agent-select-item {% if agent.status == 'active' %}preselected{% endif %}">
+                            <input type="checkbox" name="agents" value="{{ agent.id }}" 
+                                   {% if agent.status == 'active' %}checked{% endif %}>
+                            <span class="agent-select-icon">{{ agent.icon }}</span>
+                            <span class="agent-select-info">
+                                <span class="agent-select-name">{{ agent.name }}</span>
+                                <span class="agent-select-cat">{{ agent.category }}</span>
+                            </span>
+                            <span class="status-dot {{ agent.status }} mini"></span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn">
+                        🔬 Run Analysis
+                    </button>
+                    <div class="submit-hint" id="submitHint">Select at least one agent</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editor = document.getElementById('codeEditor');
+    editor.addEventListener('input', updateLineNumbers);
+    editor.addEventListener('scroll', syncGutter);
+    updateLineNumbers();
+
+    document.getElementById('analyzeForm').addEventListener('submit', function() {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Analyzing...';
+    });
+});
+
+function updateLineNumbers() {
+    const editor = document.getElementById('codeEditor');
+    const gutter = document.getElementById('editorGutter');
+    const lines = editor.value.split('\n').length;
+    let nums = '';
+    for (let i = 1; i <= lines; i++) nums += i + '\n';
+    gutter.textContent = nums;
+    document.getElementById('lineCount').textContent = lines + ' lines';
+    document.getElementById('charCount').textContent = editor.value.length + ' chars';
+}
+
+function syncGutter() {
+    const editor = document.getElementById('codeEditor');
+    const gutter = document.getElementById('editorGutter');
+    gutter.scrollTop = editor.scrollTop;
+}
+
+function toggleAllAgents(cb) {
+    document.querySelectorAll('input[name="agents"]').forEach(c => c.checked = cb.checked);
+}
+
+function updateEditorMode() {
+    const lang = document.getElementById('languageSelect').value;
+    const extMap = {python:'.py',javascript:'.js',typescript:'.ts',rust:'.rs',go:'.go',java:'.java',c:'.c',cpp:'.cpp',ruby:'.rb',php:'.php'};
+    const fn = document.getElementById('filenameInput');
+    if (!fn.value || fn.value.includes('.')) fn.value = 'main' + (extMap[lang] || '');
+}
+</script>
+{% endblock %}

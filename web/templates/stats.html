@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Statistics{% endblock %}
+{% block page_title %}Statistics{% endblock %}
+{% block page_subtitle %}Token consumption & usage analytics{% endblock %}
+
+{% block content %}
+<!-- Summary Metrics -->
+<div class="metrics-row">
+    <div class="metric-card">
+        <div class="metric-icon">🪙</div>
+        <div class="metric-body">
+            <div class="metric-value">{{ "{:,.0f}".format(total_tokens) }}</div>
+            <div class="metric-label">Total Tokens</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">💰</div>
+        <div class="metric-body">
+            <div class="metric-value">${{ "%.2f".format(total_cost) }}</div>
+            <div class="metric-label">Total Cost</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">📊</div>
+        <div class="metric-body">
+            <div class="metric-value">{{ "{:,.0f}".format(total_tokens / 14|int) }}</div>
+            <div class="metric-label">Avg Daily Tokens</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">💵</div>
+        <div class="metric-body">
+            <div class="metric-value">${{ "%.2f".format(total_cost / 14) }}</div>
+            <div class="metric-label">Avg Daily Cost</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3>Daily Token Usage</h3>
+            <span class="badge">14-day trend</span>
+        </div>
+        <div class="card-body chart-container">
+            <canvas id="dailyTokensChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3>Per-Agent Consumption</h3>
+            <span class="badge">Lifetime</span>
+        </div>
+        <div class="card-body chart-container">
+            <canvas id="agentTokensChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3>Hourly Breakdown</h3>
+            <span class="badge">Last 24 hours</span>
+        </div>
+        <div class="card-body chart-container">
+            <canvas id="hourlyChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3>Daily Cost Estimate</h3>
+            <span class="badge">@ $0.015/1K tokens</span>
+        </div>
+        <div class="card-body chart-container">
+            <canvas id="dailyCostChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Table -->
+<div class="card">
+    <div class="card-header">
+        <h3>Agent Token Breakdown</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Category</th>
+                        <th>Tokens Used</th>
+                        <th>% of Total</th>
+                        <th>Est. Cost</th>
+                        <th>Runs</th>
+                        <th>Avg Tokens/Run</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for agent in agents|sort(attribute='tokens_used', reverse=true) %}
+                    <tr>
+                        <td><span class="agent-icon-sm">{{ agent.icon }}</span> {{ agent.name }}</td>
+                        <td><span class="badge badge-lang">{{ agent.category }}</span></td>
+                        <td>{{ "{:,.0f}".format(agent.tokens_used) }}</td>
+                        <td>
+                            <div class="inline-bar">
+                                <div class="inline-bar-fill" style="width: {{ (agent.tokens_used / total_tokens * 100)|int }}%"></div>
+                                <span>{{ "%.1f"|format(agent.tokens_used / total_tokens * 100) }}%</span>
+                            </div>
+                        </td>
+                        <td>${{ "%.2f"|format(agent.tokens_used * 0.000015) }}</td>
+                        <td>{{ agent.total_runs }}</td>
+                        <td>{{ "{:,.0f}".format(agent.tokens_used / (agent.total_runs or 1)) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/stats').then(r => r.json()).then(data => {
+        renderDailyTokensChart('dailyTokensChart', data.daily_stats);
+        renderAgentTokensChart('agentTokensChart', {{ agents|tojson }});
+        renderHourlyChart('hourlyChart', data.hourly_stats);
+        renderDailyCostChart('dailyCostChart', data.daily_stats);
+    });
+});
+</script>
+{% endblock %}

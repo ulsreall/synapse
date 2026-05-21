@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Agents{% endblock %}
+{% block page_title %}Agents{% endblock %}
+{% block page_subtitle %}{{ agents|length }} review agents configured{% endblock %}
+
+{% block content %}
+<div class="agents-full-grid">
+    {% for agent in agents %}
+    <div class="card agent-full-card">
+        <div class="agent-full-header">
+            <div class="agent-full-icon">{{ agent.icon }}</div>
+            <div class="agent-full-info">
+                <h3>{{ agent.name }}</h3>
+                <p class="text-muted">{{ agent.description }}</p>
+            </div>
+            <div class="agent-full-status">
+                <span class="status-dot {{ agent.status }} {% if agent.status == 'active' %}pulse{% endif %}"></span>
+                <span class="status-text {{ agent.status }}">{{ agent.status|capitalize }}</span>
+            </div>
+        </div>
+        <div class="agent-full-stats">
+            <div class="agent-stat">
+                <span class="agent-stat-value">{{ "{:,.0f}".format(agent.tokens_used) }}</span>
+                <span class="agent-stat-label">Tokens Used</span>
+            </div>
+            <div class="agent-stat">
+                <span class="agent-stat-value">{{ agent.total_runs }}</span>
+                <span class="agent-stat-label">Total Runs</span>
+            </div>
+            <div class="agent-stat">
+                <span class="agent-stat-value">{{ agent.success_rate }}%</span>
+                <span class="agent-stat-label">Success Rate</span>
+            </div>
+            <div class="agent-stat">
+                <span class="agent-stat-value">{{ agent.avg_time_ms }}ms</span>
+                <span class="agent-stat-label">Avg Time</span>
+            </div>
+        </div>
+        <div class="agent-full-footer">
+            <div class="agent-category">
+                <span class="badge badge-lang">{{ agent.category }}</span>
+            </div>
+            <div class="agent-last-run">
+                {% if agent.last_run %}
+                Last run: {{ agent.last_run[:16] }}Z
+                {% else %}
+                Never run
+                {% endif %}
+            </div>
+        </div>
+        <div class="agent-full-bar">
+            <div class="bar-fill" style="width: {{ agent.success_rate }}%"></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
