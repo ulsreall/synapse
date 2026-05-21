@@ -1,0 +1,19 @@
+SYNAPSE is a multi-agent code analysis platform with 10 AI agents for comprehensive code review at enterprise scale. Daily consumption: 73M+ tokens.
+
+Operations:
+- Security Scanner: 18K/scan, 800/day = 14.4M
+- Architecture Review: 20K/scan, 600/day = 12.0M
+- Test Generator: 22K/scan, 500/day = 11.0M
+- Doc Generator: 18K/scan, 450/day = 8.1M
+- Code Quality: 15K/scan, 500/day = 7.5M
+- Performance Analyzer: 16K/scan, 400/day = 6.4M
+- Refactor Advisor: 16K/scan, 350/day = 5.6M
+- Type Checker: 14K/scan, 350/day = 4.9M
+- Dependency Audit: 12K/scan, 300/day = 3.6M
+- Changelog Generator: 10K/scan, 200/day = 2.0M
+
+Each codebase flows through all agents consuming 156K+ tokens per scan. Web dashboard tracks per-agent consumption in real-time.
+
+We serve 200+ dev teams processing 800+ codebases daily. Each analysis requires deep AST parsing, pattern matching, cross-file dependency tracing, and contextual reasoning. 800 daily runs × 91K avg = 73M+ tokens/day.
+
+Previously used GPT-4 but costs prohibitive. MiMo v2.5 Pro's reasoning depth ideal for multi-agent analysis. Need 1.6B tokens/month plan.
